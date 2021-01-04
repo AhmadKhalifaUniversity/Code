@@ -1,0 +1,155 @@
+contract Registration{
+    
+    
+    // Owner: 0x5B38Da6a701c568545dCfcB03FcB875f56beddC4
+    // ProductID: 0x4B0897b0513fdC7C541B6d9D7E929C4e5364D2dB
+    
+    
+    mapping(address=>bool) manufacturers;               // Manufacturer: 0x78731D3Ca6b7E34aC0F824c42a7cC18A495cabaB
+    mapping(address=>bool) distributors;                //distributors: 0x4B20993Bc481177ec7E8f571ceCaE8A9e22C02db
+    mapping(address=>bool) Covid19ScreeningUnit;        // Covid19ScreeningUnit: 0xAb8483F64d9C6d1EcF9b849Ae677dD3315835cb2
+    mapping(address=>bool) WasteShipper;               //WasteShipper: 0x617F2E2fD72FD9D5503197092aC168c91465E7f2
+    mapping(address=>bool) WasteTreatmentUnit;        //WasteTreatmentUnit: 0x17F6AD8Ef982297579C203069C1DbfFE4348c372
+    mapping(address=>uint) manufacturers_LIC;
+    mapping(address=>uint) distributors_LIC;
+    mapping(address=>uint) Covid19ScreeningUnit_LIC;
+    mapping(address=>uint) WasteShipper_LIC;
+    mapping(address=>uint) WasteTreatmentUnit_LIC;
+    
+    address owner;
+    
+    modifier onlyOwner{
+      require(msg.sender == owner,
+      "Sender not authorized."
+      );
+      _;
+    }   
+    
+    constructor() public{
+        owner=msg.sender;
+    }
+    
+    function register_Manufacturer(address a, uint licence) public onlyOwner{
+        manufacturers_LIC[a]=licence;
+        require(!manufacturers[a],
+        "Cannot registor as Manufacturer already exists or licence number is invalid"
+        );
+        
+        manufacturers[a]=true;
+    }
+    
+    function register_Distributor(address b,  uint licence) public onlyOwner{
+        distributors_LIC[b]=licence;
+        require(!distributors[b],
+        "Cannot registor as Distributor already exists or licence number is invalid"
+        );
+        
+        distributors[b]=true;
+    }
+    
+    function register_Covid19ScreeningUnit(address c, uint licence) public onlyOwner{
+        Covid19ScreeningUnit_LIC[c]=licence;
+        require(!Covid19ScreeningUnit[c],
+        "Cannot registor as Covid19ScreeningUnit exists already or licence number is invalid"
+        );
+        
+        Covid19ScreeningUnit[c]=true;
+    }
+    
+    function register_WasteShipper(address d, uint licence) public onlyOwner{
+       WasteShipper_LIC[d]=licence;
+        require(!WasteShipper[d],
+        "Cannot registor since WasteShipper exists already or licence number is invalid"
+        );
+        
+        WasteShipper[d]=true;
+    }
+    
+    function register_WasteTreatmentUnit(address e, uint licence) public onlyOwner{
+        WasteTreatmentUnit_LIC[e]=licence;
+        require(!WasteTreatmentUnit[e],
+        "Cannot registor since WasteTreatmentUnit exists already or licence number is invalid"
+        );
+        
+        WasteTreatmentUnit[e]=true;
+    }
+    
+    
+    function isOwner(address s) public view returns(bool){
+        return (owner==s);
+    }
+    
+    function manufacturerExists(address k) public view returns(bool){
+        return manufacturers[k];
+    }
+    
+    function distributorExists(address x) public view returns(bool){
+        return distributors[x];
+    }
+    
+    function covid19ScreeningUnitExists(address r) public view returns(bool){
+        return Covid19ScreeningUnit[r];
+    }
+    
+    function wasteShipperExists(address q) public view returns(bool){
+        return WasteShipper[q];
+    }
+    
+      function wasteTreatmentUnitExists(address y) public view returns(bool){
+        return WasteTreatmentUnit[y];
+    }
+    
+    
+    ///
+        function manufacturerlicenceisValid(address k1) public view returns(bool){
+        if (manufacturers_LIC[k1]!=0 && manufacturers_LIC[k1]!=777) 
+        {
+        return true;     
+        
+        }
+    }
+    
+    function distributorlicenceisValid(address x1) public view returns(bool){
+        //return distributors_LIC[x1];
+         if (distributors_LIC[x1]!=0 && distributors_LIC[x1]!=777) 
+        {
+        return true;     
+        
+        }
+    }
+    
+    
+    function covid19ScreeningUnitlicenceisValid(address r1) public view returns(bool){
+       // return Covid19ScreeningUnit_LIC[r1];
+          if (Covid19ScreeningUnit_LIC[r1]!=0 && Covid19ScreeningUnit_LIC[r1]!=777) 
+        {
+        return true;     
+        
+        }
+    }
+    
+    function wasteShipperlicenceisValid(address q1) public view returns(bool){
+          if (WasteShipper_LIC[q1]!=0 && WasteShipper_LIC[q1]!=777) 
+        {
+        return true;     
+        
+        }
+        
+    }
+    
+      function wasteTreatmentUnitlicenceisValid(address y1) public view returns(bool){
+       
+           if (WasteTreatmentUnit_LIC[y1]!=0 && WasteTreatmentUnit_LIC[y1]!=777) 
+        {
+        return true;     
+        
+        }
+        
+    }
+    
+   function getshipperLicense(address S) public view returns (uint)
+   {
+       return WasteShipper_LIC[S];
+   }
+    
+}
