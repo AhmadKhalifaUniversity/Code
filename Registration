@@ -1,15 +1,12 @@
+// 
 contract Registration{
     
     
-    // Owner: 0x5B38Da6a701c568545dCfcB03FcB875f56beddC4
-    // ProductID: 0x4B0897b0513fdC7C541B6d9D7E929C4e5364D2dB
-    
-    
-    mapping(address=>bool) manufacturers;               // Manufacturer: 0x78731D3Ca6b7E34aC0F824c42a7cC18A495cabaB
-    mapping(address=>bool) distributors;                //distributors: 0x4B20993Bc481177ec7E8f571ceCaE8A9e22C02db
-    mapping(address=>bool) Covid19ScreeningUnit;        // Covid19ScreeningUnit: 0xAb8483F64d9C6d1EcF9b849Ae677dD3315835cb2
-    mapping(address=>bool) WasteShipper;               //WasteShipper: 0x617F2E2fD72FD9D5503197092aC168c91465E7f2
-    mapping(address=>bool) WasteTreatmentUnit;        //WasteTreatmentUnit: 0x17F6AD8Ef982297579C203069C1DbfFE4348c372
+    mapping(address=>bool) manufacturers;               
+    mapping(address=>bool) distributors;               
+    mapping(address=>bool) Covid19ScreeningUnit;        
+    mapping(address=>bool) WasteShipper;               
+    mapping(address=>bool) WasteTreatmentUnit;       
     mapping(address=>uint) manufacturers_LIC;
     mapping(address=>uint) distributors_LIC;
     mapping(address=>uint) Covid19ScreeningUnit_LIC;
@@ -153,3 +150,230 @@ contract Registration{
    }
     
 }
+
+
+contract WasteShipmentHandler{
+uint flag;
+bytes32 RD;
+bool statusflag;
+bool penality;
+uint misbehaviorcount;
+uint threshold;
+uint difference;
+uint license;
+Registration RegistrationContract;   
+
+enum statusOrder 
+{
+    pending,
+    accepted,
+    rejected,
+    shipping, 
+    reached,
+    received
+}
+
+struct shipmentdetails{
+    string time;
+    string location;
+    statusOrder status;
+    address receiver;
+    uint weight;
+    string wasteImageshash;
+    uint sensorstate;
+    }
+    
+event ShippingRequestPlaced (bytes32 ShipmentID, address ShipperEA, address WasteGeneratorEA, uint WasteWeight, uint SensorState);
+event ShipmentRequestStatusUpdated(bytes32 ShipmentID, statusOrder stat);
+event ShipmentStateandlocationUpdated(bytes32 ShipmentID, statusOrder stat, string CurrentLocation, uint SensorState, uint256 Time);
+event WasteReceived(bytes32 ShipmentID, uint256 Time );
+event PenalityStatusUpdated(address ShipperEA, uint256 ViolationsCount, uint ShipperLicense);
+
+constructor(address reigstration) public{
+        RegistrationContract = Registration(reigstration);
+        misbehaviorcount=0;
+        threshold=2;
+        statusflag=false;
+        flag=0;
+        
+    }
+    mapping(uint=>bool) public shipmentconaintersstate;
+    mapping(address=>bool) public COVIDresult;
+    
+    mapping(bytes32=>shipmentdetails) public orders;
+
+    modifier onlyHospital{
+   
+    require(RegistrationContract.covid19ScreeningUnitExists(msg.sender),
+      "Waste generator not authorized."
+      );
+      _;
+    }
+      modifier onlyTreatmentfacility{
+    require(RegistrationContract.wasteTreatmentUnitExists(msg.sender) && RegistrationContract.wasteTreatmentUnitlicenceisValid(msg.sender),
+      "COVID-19 waste treatment facility is not authorized."
+      );
+      _;
+    }
+   
+    modifier onlyshipper{
+    require(RegistrationContract.wasteShipperExists(msg.sender) && RegistrationContract.wasteShipperlicenceisValid(msg.sender),
+      "Waste Shipper entity is not authorized."
+      );
+      _;
+    }
+    
+ function  UpdateHealthstatus (address ShipperEA, bool COVIDupdatedresult) public onlyHospital
+ {
+     require(RegistrationContract.wasteShipperExists(ShipperEA), "Transporter not registered");
+     COVIDresult[ShipperEA]=COVIDupdatedresult;
+ }
+  
+   function GetShipeOrderState(bytes32 shipID) public view returns(statusOrder){
+        return (orders[shipID].status);
+    }
+    
+    function GetSensorsState(bytes32 shipID) public view returns(uint256){
+        return (orders[shipID].sensorstate);
+    }
+    
+    function GetWasteLocation(bytes32 shipID) public view returns(string memory){
+        return (orders[shipID].location);
+    }
+    
+    function GetHealthData(address ShipperEA) public view returns(bool){
+        return (COVIDresult[ShipperEA]);
+    }
+ 
+ function PlaceShipmentRequest(address ShipperEA, uint Weight, string memory Currentlocation, string memory Pickuptime, uint Sensstate, string memory WasteImageshash) public onlyHospital{ 
+     
+        
+         require(COVIDresult[ShipperEA],
+        "Request not guranteed since COVID-19 result of shipper is not positive.");
+        statusflag=false; 
+        bytes32 shipID=keccak256(abi.encodePacked(ShipperEA,address(this),Weight,Pickuptime));
+        orders[shipID]= shipmentdetails(Pickuptime,Currentlocation,statusOrder.pending,ShipperEA,Weight,WasteImageshash,Sensstate);
+        flag=Sensstate;
+        RD=shipID;
+        emit  ShippingRequestPlaced(shipID, ShipperEA, msg.sender,Weight,Sensstate);
+     
+ }
+  function GetShipmentID() public view returns(bytes32){
+        return RD;
+    }
+    
+ function  ConfirmShipmentRequest(bytes32 ShipID, bool Accept) public onlyshipper
+ {
+    
+     
+        //require(orders[ShipID].status==statusOrder.pending);
+
+        require(keccak256(abi.encodePacked(orders[ShipID].status))==keccak256(abi.encodePacked(statusOrder.pending)));
+        if(Accept==true){
+            orders[ShipID].status=statusOrder.accepted;
+        }
+        else{
+            orders[ShipID].status=statusOrder.rejected;
+        }
+        statusflag=true;
+        emit ShipmentRequestStatusUpdated(ShipID,orders[ShipID].status);
+     
+ } 
+ 
+
+//function Getsttauscheck() public view returns(bytes32){
+  //      return orders[shipID].status;
+    //}
+ function  UpdateShipmentStatus(bytes32 ShipID, string memory Currentlocation, uint Sensordata, bool Reacheddestination) public onlyshipper 
+ {
+    statusOrder A=orders[ShipID].status;
+    if(keccak256(abi.encodePacked(A))==keccak256(abi.encodePacked(statusOrder.rejected)))
+    {
+        
+        revert("Action cannot be granted since the shipment request is rejected by the shipper! .");
+    }
+    
+    //require(orders[shipID].status!=statusOrder.reached, "Transporter not registered");
+     if (statusflag==true && Reacheddestination==false)
+     {
+     
+     //require(orders[shipID].status==statusOrder.Accepted);
+     
+     orders[ShipID].status=statusOrder.shipping;
+     orders[ShipID].location= Currentlocation;
+     orders[ShipID].sensorstate= Sensordata;
+   
+ }  
+  
+     if (orders[ShipID].sensorstate!=flag)
+     {
+          misbehaviorcount+=1;
+          penality=true;
+     }
+     
+ if (statusflag==true && Reacheddestination==true)
+     {
+     orders[ShipID].status=statusOrder.reached;
+     orders[ShipID].location= Currentlocation;
+     orders[ShipID].sensorstate= Sensordata;
+ }
+    emit ShipmentStateandlocationUpdated(ShipID, orders[ShipID].status, orders[ShipID].location, orders[ShipID].sensorstate,now); 
+     
+ }
+ 
+
+ function ConfirmShipmentReceiving(bytes32 ShipID, uint Weight_new) public onlyTreatmentfacility  
+ 
+ {
+     //(keccak256(abi.encodePacked(orders[shipID].status))==keccak256(abi.encodePacked(statusOrder.reached)))
+     
+      require(keccak256(abi.encodePacked(orders[ShipID].status))==keccak256(abi.encodePacked(statusOrder.reached)),"The Shipment carrying COVID-19 waste has not reached yet");
+      orders[ShipID].status=statusOrder.received; 
+      difference=Weight_new-orders[ShipID].weight;
+      
+      emit WasteReceived(ShipID, now);
+     
+ }
+ 
+function Getpenalty(address ShipperEA) public view returns(bool Result, uint256 Total_ViolationsCount, string memory Licence){
+        require (RegistrationContract.isOwner (msg.sender)==true, " Only Owner/FDA can perform this action.");
+        if (RegistrationContract.wasteShipperExists(ShipperEA) && penality==true)
+         {
+             if (license==777)
+             {
+             Licence= "Cancelled Code: 777";
+             return (true, misbehaviorcount,Licence); 
+             }
+             
+             else 
+             {
+            Licence= "Valid";
+            return (true, misbehaviorcount,Licence); 
+             }
+         }
+         }
+         
+         
+         function PenalityCalculationResult(address ShipperEA) public {
+        require (RegistrationContract.isOwner (msg.sender)==true, " Only Owner/FDA can perform this action.");
+        if (RegistrationContract.wasteShipperExists(ShipperEA) && penality==true)
+         {
+             if (misbehaviorcount>=threshold || difference!=0)
+             {
+             license=777;
+             emit PenalityStatusUpdated (ShipperEA,misbehaviorcount,license); 
+             }
+             
+             else 
+             {
+            emit PenalityStatusUpdated (ShipperEA, misbehaviorcount,RegistrationContract.getshipperLicense(ShipperEA));
+             }
+         }
+         }
+
+        
+    }
+
+
+
+
