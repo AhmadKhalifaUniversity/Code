@@ -371,7 +371,6 @@ function Getpenalty(address ShipperEA) public view returns(bool Result, uint256 
     }
 
 contract LotandOwnershipTransferManager {
-    
     address public EquipmentID;
     string public EquipmentName;
     string public MaterialHash;
@@ -394,13 +393,26 @@ contract LotandOwnershipTransferManager {
       _;
     }   
     
-
     modifier onlysender{
       require(RegistrationContract.manufacturerExists(msg.sender)||RegistrationContract.distributorExists(msg.sender),
       "Medical supplies sender is not authorized."
       );
       _;
-    }   
+    }  
+    function transferOwnership (address payable NewOwner) public onlyOwner{
+        if(RegistrationContract.manufacturerExists(NewOwner))
+        ownerType="Manufacturer";
+        else if(RegistrationContract.distributorExists(NewOwner))
+        ownerType="Distributor";
+        else if(RegistrationContract.covid19ScreeningUnitExists(NewOwner))
+        ownerType="Covid19ScreeningUnit";
+        else if(RegistrationContract.wasteShipperExists(NewOwner))
+        ownerType="WasteShipper";
+        else
+        revert("New Owner doesn't exist.");
+        owner=NewOwner;
+        emit OwnershipTransferred(owner,ownerType,now);
+    }
     
     constructor(address registration, address ID, string memory Name, string memory Material, string memory Batch, string memory CE, uint Quantity) public{
         RegistrationContract = Registration(registration);
@@ -418,21 +430,6 @@ contract LotandOwnershipTransferManager {
         Available_Balance=TotalQuantity;
         
         emit EquipmentLotDispatched(address(this), EquipmentName, MaterialHash, BatchNumber, CertificateHash);
-    }
-    
-    function transferOwnership (address payable NewOwner) public onlyOwner{
-        if(RegistrationContract.manufacturerExists(NewOwner))
-        ownerType="Manufacturer";
-        else if(RegistrationContract.distributorExists(NewOwner))
-        ownerType="Distributor";
-        else if(RegistrationContract.covid19ScreeningUnitExists(NewOwner))
-        ownerType="Covid19ScreeningUnit";
-        else if(RegistrationContract.wasteShipperExists(NewOwner))
-        ownerType="WasteShipper";
-        else
-        revert("New Owner doesn't exist.");
-        owner=NewOwner;
-        emit OwnershipTransferred(owner,ownerType,now);
     }
     
     function UpdateInventory(address ProviderEA, uint Requested_quantity) public onlysender{
