@@ -1,19 +1,17 @@
 
   pragma solidity =0.6.0;
 contract Registration{  
-    mapping(address=>bool) manufacturers;
-    mapping(address=>bool) distributors;                
     mapping(address=>bool) Covid19ScreeningUnit;         
-   mapping(address=>bool) WasteShipper;
+    mapping(address=>bool) WasteShipper;
     mapping(address=>bool) WasteTreatmentUnit; 
     mapping(address=>uint) manufacturers_LIC;
     mapping(address=>uint) distributors_LIC;
     mapping(address=>uint) Covid19ScreeningUnit_LIC;
     mapping(address=>uint) WasteShipper_LIC;
+    mapping(address=>bool) manufacturers;
+    mapping(address=>bool) distributors;   
     mapping(address=>uint) WasteTreatmentUnit_LIC;
-    
     address owner;
-    
     modifier onlyOwner{
       require(msg.sender == owner,
       "Sender not authorized."
