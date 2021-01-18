@@ -367,7 +367,7 @@ function Getpenalty(address ShipperEA) public view returns(bool Result, uint256 
 
         
     }
-
+    
 contract LotandOwnershipTransferManager {
     address public EquipmentID;
     string public EquipmentName;
@@ -597,9 +597,9 @@ contract OrderManager{
     
     function confirmReceived(bytes32 orderID) public onlyOrderer{
         require(orders[orderID].orderer==msg.sender,
-        "Sender not authorized."
+        "Sender not authorized." 
         );
-        
+         /////////////////A part of this code is borrowed from https://github.com/MazenDB/TrackingPPE//////////////////////////////// 
         require(keccak256(abi.encodePacked(orders[orderID].orderStatus)) == keccak256(abi.encodePacked(status.Approved)), "The shipment has not arrived yet");
 
         orders[orderID].orderStatus=status.Received;
@@ -608,4 +608,5 @@ contract OrderManager{
     }
 
 }
+
 
