@@ -175,9 +175,10 @@ struct shipmentdetails{
     uint weight;
     string wasteImageshash;
     uint sensorstate;
+    address EquipmentID;
     }
     
-event ShippingRequestPlaced (bytes32 ShipmentID, address ShipperEA, address WasteGeneratorEA, uint WasteWeight, uint SensorState);
+event ShippingRequestPlaced (bytes32 ShipmentID, address ShipperEA, address WasteGeneratorEA, uint WasteWeight, uint SensorState, address Equipment);
 event ShipmentRequestStatusUpdated(bytes32 ShipmentID, statusOrder stat);
 event ShipmentStateandlocationUpdated(bytes32 ShipmentID, statusOrder stat, string CurrentLocation, uint SensorState, uint256 Time);
 event WasteReceived(bytes32 ShipmentID, uint256 Time );
@@ -239,17 +240,17 @@ constructor(address reigstration) public{
         return (COVIDresult[ShipperEA]);
     }
  
- function PlaceShipmentRequest(address ShipperEA, uint Weight, string memory Currentlocation, string memory Pickuptime, uint Sensstate, string memory WasteImageshash) public onlyHospital{ 
+ function PlaceShipmentRequest(address ShipperEA, uint Weight, string memory Currentlocation, string memory Pickuptime, uint Sensstate, string memory WasteImageshash, address EquipID) public onlyHospital{ 
      
         
          require(COVIDresult[ShipperEA],
         "Request not guranteed since COVID-19 result of shipper is not positive.");
         statusflag=false; 
         bytes32 shipID=keccak256(abi.encodePacked(ShipperEA,address(this),Weight,Pickuptime));
-        orders[shipID]= shipmentdetails(Pickuptime,Currentlocation,statusOrder.pending,ShipperEA,Weight,WasteImageshash,Sensstate);
+        orders[shipID]= shipmentdetails(Pickuptime,Currentlocation,statusOrder.pending,ShipperEA,Weight,WasteImageshash,Sensstate,EquipID);
         flag=Sensstate;
         RD=shipID;
-        emit  ShippingRequestPlaced(shipID, ShipperEA, msg.sender,Weight,Sensstate);
+        emit  ShippingRequestPlaced(shipID, ShipperEA, msg.sender,Weight,Sensstate,EquipID);
      
  }
   function GetShipmentID() public view returns(bytes32){
