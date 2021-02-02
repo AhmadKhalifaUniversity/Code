@@ -246,7 +246,7 @@ constructor(address reigstration) public{
          require(COVIDresult[ShipperEA],
         "Request not guranteed since COVID-19 result of shipper is not positive.");
         statusflag=false; 
-        bytes32 shipID=keccak256(abi.encodePacked(ShipperEA,address(this),Weight,Pickuptime));
+        bytes32 shipID=keccak256(abi.encodePacked(ShipperEA,address(this),Weight,Pickuptime,now));
         orders[shipID]= shipmentdetails(Pickuptime,Currentlocation,statusOrder.pending,ShipperEA,Weight,WasteImageshash,Sensstate,EquipID);
         flag=Sensstate;
         RD=shipID;
