@@ -376,6 +376,7 @@ contract LotandOwnershipTransferManager {
     string public BatchNumber;
     string public CertificateHash;
     uint public TotalQuantity;
+    uint Call_Status;
     uint public Available_Balance;
     address registrationContract;
     string ownerType;
@@ -427,11 +428,15 @@ contract LotandOwnershipTransferManager {
         CertificateHash=CE;
         TotalQuantity=Quantity;
         Available_Balance=TotalQuantity;
+        Call_Status=34; 
         
         emit EquipmentLotDispatched(address(this), EquipmentName, MaterialHash, BatchNumber, CertificateHash);
     }
     
-    function UpdateInventory(address ProviderEA, uint Requested_quantity) public onlysender{
+     function UpdateInventory(address ProviderEA, uint Requested_quantity) public onlysender{
+       
+        require (Call_Status>0, "Multiple callls are not allowed"); 	
+        Call_Status=0; 
         require(Available_Balance>=Requested_quantity,
         "Not enough Items available in the stock"
         );
@@ -454,13 +459,13 @@ contract LotandOwnershipTransferManager {
         Available_Balance=Available_Balance-Requested_quantity;
         
         emit InventoryUpdated(address(this),ProviderEA,Requested_quantity,now);
-        
+        Call_Status=5; 
         if(Available_Balance==0)
         {
             selfdestruct(owner);
         }
-    } 
 
+    } 
 }
 
 contract OrderManager{
