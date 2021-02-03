@@ -377,6 +377,7 @@ contract LotandOwnershipTransferManager {
     string public CertificateHash;
     uint public TotalQuantity;
     uint Call_Status;
+    uint Call_OWnStatus;
     uint public Available_Balance;
     address registrationContract;
     string ownerType;
@@ -400,6 +401,8 @@ contract LotandOwnershipTransferManager {
       _;
     }  
     function transferOwnership (address payable NewOwner) public onlyOwner{
+        require (Call_OWnStatus>0, "Multiple callls are not allowed"); 	
+        Call_OWnStatus=0; 
         if(RegistrationContract.manufacturerExists(NewOwner))
         ownerType="Manufacturer";
         else if(RegistrationContract.distributorExists(NewOwner))
@@ -412,6 +415,7 @@ contract LotandOwnershipTransferManager {
         revert("New Owner doesn't exist.");
         owner=NewOwner;
         emit OwnershipTransferred(owner,ownerType,now);
+        Call_OWnStatus=3; 
     }
     
     constructor(address registration, address ID, string memory Name, string memory Material, string memory Batch, string memory CE, uint Quantity) public{
@@ -429,6 +433,7 @@ contract LotandOwnershipTransferManager {
         TotalQuantity=Quantity;
         Available_Balance=TotalQuantity;
         Call_Status=34; 
+        Call_OWnStatus=34;
         
         emit EquipmentLotDispatched(address(this), EquipmentName, MaterialHash, BatchNumber, CertificateHash);
     }
